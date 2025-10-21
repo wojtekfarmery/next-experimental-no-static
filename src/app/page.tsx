@@ -1,5 +1,6 @@
 import Image from "next/image";
 import styles from "./page.module.css";
+import { ClientEnvExample } from "./client-env-example";
 
 const exampleEnv = process.env.NEXT_PUBLIC_EXAMPLE_ENV || "not set";
 
@@ -24,9 +25,13 @@ export default function Home() {
         </ol>
 
         <div className={styles.envBox}>
-          <h3>Runtime Environment Variable</h3>
+          <h3>Runtime Environment Variable in a Server Component</h3>
           <code>NEXT_PUBLIC_EXAMPLE_ENV = {exampleEnv}</code>
         </div>
+
+        <hr />
+
+        <ClientEnvExample />
 
         <div className={styles.ctas}>
           <a
