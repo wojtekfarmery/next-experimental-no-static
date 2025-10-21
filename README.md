@@ -10,9 +10,9 @@ Normally, next build generates static HTML for pages — which means your databa
 
 That’s often a problem when:
 
-❌ Your database isn’t available during CI/CD builds  
-❌ You don’t want to use live credentials in your build environment
-❌ Your data changes frequently, so static pre-generation doesn’t make sense
+- ❌ Your database isn’t available during CI/CD builds
+- ❌ You don’t want to use live credentials in your build environment
+- ❌ Your data changes frequently, so static pre-generation doesn’t make sense
 
 With experimental compile mode, Next.js skips HTML generation and compiles only the server code.
 
@@ -20,11 +20,11 @@ ISR still works at runtime, so pages are generated on-demand — not during buil
 
 You get:
 
-✅ No DB or API calls during build
-✅ ISR still works dynamically at runtime
-✅ Smaller Docker images
-✅ No need for live DB connections in CI
-✅ Runtime env injection via generate-env
+- ✅ No DB or API calls during build
+- ✅ ISR still works dynamically at runtime
+- ✅ Smaller Docker images
+- ✅ No need for live DB connections in CI
+- ✅ Runtime env injection via generate-env
 
 ### ⚙️ Build Modes Used
 
@@ -62,10 +62,8 @@ Notice we don’t pass --build-arg NEXT_PUBLIC_EXAMPLE_ENV here — because env 
 
 ```bash
 docker run -p 3000:3000 \
-
--e NEXT_PUBLIC_EXAMPLE_ENV="Hello from runtime 🐳" \
-
-next-no-static-isr
+  -e NEXT_PUBLIC_EXAMPLE_ENV="Hello from runtime 🐳" \
+  next-no-static-isr
 ```
 
 You’ll see something like:
