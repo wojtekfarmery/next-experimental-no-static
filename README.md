@@ -2,7 +2,7 @@
 
 ## Using Experimental Compile + Generate Env
 
-This example demonstrates how to build and run a Next.js 15 application using the experimental build pipeline — specifically the `compile` and `generate-env `build modes — to produce an image that does not include pre-rendered static pages, but still supports `ISR` (Incremental Static Regeneration) at runtime.
+This example demonstrates how to build and run a Next.js 15 application using the experimental build pipeline — specifically the `compile` and `generate-env` build modes — to produce an image that does not include pre-rendered static pages, but still supports `ISR` (Incremental Static Regeneration) at runtime.
 
 ### 🧠 Why This Matters
 
@@ -11,7 +11,9 @@ Normally, next build generates static HTML for pages — which means your databa
 That’s often a problem when:
 
 - ❌ Your database isn’t available during CI/CD builds
+
 - ❌ You don’t want to use live credentials in your build environment
+
 - ❌ Your data changes frequently, so static pre-generation doesn’t make sense
 
 With experimental compile mode, Next.js skips HTML generation and compiles only the server code.
@@ -21,9 +23,13 @@ ISR still works at runtime, so pages are generated on-demand — not during buil
 You get:
 
 - ✅ No DB or API calls during build
+
 - ✅ ISR still works dynamically at runtime
+
 - ✅ Smaller Docker images
+
 - ✅ No need for live DB connections in CI
+
 - ✅ Runtime env injection via generate-env
 
 ### ⚙️ Build Modes Used
@@ -31,34 +37,87 @@ You get:
 Command Purpose
 
 ```bash
+
 npx next build --experimental-build-mode compile
+
 ```
 
 - Compiles server code without static HTML output
 
 ```bash
+
 npx next build --experimental-build-mode generate-env
+
 ```
 
-- Generates runtime environment injection for deployed environments
+- Injects the environment variables into the bundle
 
-### ⚙️ Build & Run Options
+## ⚙️ Build Behavior (Server vs Client Env Vars)
 
-This example can be run with or without Docker — both methods skip static page generation and inject environment variables only at runtime.
+When using `NEXT_PUBLIC_` variables, **where** and **when** you inject them matters.
 
-#### 🐳 Option 1 — Run with Docker (Recommended)
+### 1. Server-only variables
 
-#### 🧱 1. Build the image (no static HTML, no env vars yet)
-
-##### Build once — no database or API calls happen here.
+If your variable is only used on the **server**
+you **don’t need `generate-env`** — just compile the app:
 
 ```bash
-docker build -t next-no-static-isr .
+npx next build --experimental-build-mode compile
 ```
 
-Notice we don’t pass --build-arg NEXT_PUBLIC_EXAMPLE_ENV here — because env vars are only injected at runtime.
+and pass the env vars at runtime:
 
-##### Run the container (inject env vars dynamically)
+```bash
+NEXT_PUBLIC_EXAMPLE_ENV="Hello from runtime 👋" npx next start`
+```
+
+✅ Works in Docker and local Node environments.  
+✅ Env var is available in all **server-side** code at runtime.  
+⚠️ Not available in **client components**.
+
+---
+
+### 2. Client-side (NEXT*PUBLIC*) variables
+
+If your variable is used in the **browser** (inside a Client Component or exposed via hydration),  
+you need to **inject it during build** using `generate-env`, like so:
+
+First:
+
+```bash
+npx next build --experimental-build-mode compile
+```
+
+then
+
+```bash
+NEXT_PUBLIC_EXAMPLE_ENV="Hello from local runtime 👋" npx next build --experimental-build-mode generate-env
+```
+
+Then start the app (no need to pass it again):
+
+```bash
+npx next start
+```
+
+✅ Now the variable is available in both:
+
+- the **client bundle** (e.g. `process.env.NEXT_PUBLIC_EXAMPLE_ENV` in client components)
+- and the **server** runtime
+
+---
+
+### 🐳 Running with Docker
+
+##### 🧱 Build once — no database or API calls happen here.
+
+### ⚙️ Injecting Environment Variables
+
+You have **two options**, depending on where your variable needs to be available 👇
+
+#### 🧠 Option 1 — Inject at runtime (Server-only)
+
+If your variable is only used on the **server** (like inside API routes or Server Components):
 
 ```bash
 docker run -p 3000:3000 \
@@ -66,58 +125,42 @@ docker run -p 3000:3000 \
   next-no-static-isr
 ```
 
-You’ll see something like:
+✅ Available in **server-side code** (Node runtime)  
+❌ Not available to the **client bundle**  
+✅ Works great for most backend-only values
 
-```
-▲ Next.js 15.0.0
+So if your app just needs it for database queries, server logs, etc. — this is all you need.
 
-- Local: http://localhost:3000
-- Environment: production
-```
+---
 
-Then open:
+#### 🌍 Option 2 — Inject at build time (Client + Server)
 
-```
-http://localhost:3000
-```
-
-#### 💻 Option 2 — Run Locally (No Docker)
-
-You can also run this example directly on your machine — the same build logic applies.
-
-#### 🧩 1. Install dependencies
+If your variable needs to appear on the **client side** (e.g., displayed in the UI),  
+you must pass it during the **build** so that Next.js can include it in the generated env manifest:
 
 ```bash
-npm ci
+docker build \
+  --build-arg NEXT_PUBLIC_EXAMPLE_ENV="Hello from Docker build 🧱" \
+  -t next-no-static-isr .
 ```
 
-#### ⚙️ 2. Build with experimental modes
-
-```bash
-npx next build --experimental-build-mode compile
-```
+Then run normally:
 
 ```bash
-npx next build --experimental-build-mode generate-env
+docker run -p 3000:3000 next-no-static-isr
 ```
 
-#### 🚀 3. Start the app and inject a runtime env variable
-
-```
-NEXT_PUBLIC_EXAMPLE_ENV="Hello from local runtime 👋" npx next start
-```
-
-Then open:
-
-```
-👉 http://localhost:3000
-```
+✅ Available in both **client** and **server** code  
+⚠️ The value is **baked into the image** — if you rebuild with a new value, you must rebuild the image.
 
 ### 🧠 What’s Happening Behind the Scenes
 
 - 🧩 compile skips HTML generation — no database or API calls occur during build.
+
 - ⚡️ generate-env prepares the app to read environment variables at runtime.
+
 - 🌀 When you run the container (or start locally), process.env values are read live.
+
 - 🔁 ISR still works — pages render on-demand and revalidate in the background.
 
 ### 🐳 Docker Setup
@@ -125,61 +168,103 @@ Then open:
 - Explanation of the dockerfile
 
 ```dockerfile
+
 Dockerfile
+
+
 
 FROM node:20-alpine AS builder
 
+
+
 WORKDIR /app
+
 ```
 
 #### We define the ARG, but we won't inject it here — runtime only
 
 ```dockerfile
+
 ARG NEXT_PUBLIC_EXAMPLE_ENV
 
+
+
 ENV NEXT_PUBLIC_EXAMPLE_ENV=$NEXT_PUBLIC_EXAMPLE_ENV
+
 COPY package\*.json ./
+
+
 
 RUN npm ci
 
+
+
 COPY . .
+
 ```
 
 #### Compile the app without static HTML output
 
 ```dockerfile
+
 RUN npx next build --experimental-build-mode compile
+
+
 
 RUN npx next build --experimental-build-mode generate-env
 
 
+
+
 RUN rm -rf .next/cache
+
+
 
 FROM node:20-alpine AS runner
 
+
+
 WORKDIR /app
+
+
 
 ENV NODE_ENV=production
 
+
+
 ENV PORT=3000
+
 ```
 
 #### Define ARG again for consistency, but actual value comes at runtime
 
 ```dockerfile
+
 ARG NEXT_PUBLIC_EXAMPLE_ENV
+
+
 
 ENV NEXT_PUBLIC_EXAMPLE_ENV=$NEXT_PUBLIC_EXAMPLE_ENV
 
 
 
+
+
 COPY --from=builder /app/.next ./.next
+
+
 
 COPY --from=builder /app/public ./public
 
+
+
 COPY --from=builder /app/package\*.json ./
 
+
+
 COPY --from=builder /app/node_modules ./node_modules
+
+
 
 
 
@@ -187,7 +272,11 @@ RUN npm prune --omit=dev && npm cache clean --force
 
 
 
+
+
 EXPOSE 3000
+
+
 
 CMD ["npx", "next", "start"]
 ```
