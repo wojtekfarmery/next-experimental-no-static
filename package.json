@@ -1,5 +1,5 @@
 {
-  "name": "next-generate-no-static",
+  "name": "next-experimental-no-static",
   "version": "0.1.0",
   "private": true,
   "scripts": {

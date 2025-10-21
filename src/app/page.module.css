@@ -165,3 +165,14 @@ a.secondary {
     filter: invert();
   }
 }
+
+.envBox {
+  margin-top: 2rem;
+  padding: 1rem 1.5rem;
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: #111;
+  color: #0f0;
+  font-family: monospace;
+  text-align: center;
+}

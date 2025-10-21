@@ -1,6 +1,8 @@
 import Image from "next/image";
 import styles from "./page.module.css";
 
+const exampleEnv = process.env.NEXT_PUBLIC_EXAMPLE_ENV || "not set";
+
 export default function Home() {
   return (
     <div className={styles.page}>
@@ -13,12 +15,18 @@ export default function Home() {
           height={38}
           priority
         />
+
         <ol>
           <li>
             Get started by editing <code>src/app/page.tsx</code>.
           </li>
           <li>Save and see your changes instantly.</li>
         </ol>
+
+        <div className={styles.envBox}>
+          <h3>Runtime Environment Variable</h3>
+          <code>NEXT_PUBLIC_EXAMPLE_ENV = {exampleEnv}</code>
+        </div>
 
         <div className={styles.ctas}>
           <a
@@ -46,6 +54,7 @@ export default function Home() {
           </a>
         </div>
       </main>
+
       <footer className={styles.footer}>
         <a
           href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
